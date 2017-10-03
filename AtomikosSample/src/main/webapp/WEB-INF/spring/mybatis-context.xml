@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<!-- root.context.xml으로 옮김 (필요하면 다시 가져오면 됨) -->
+
+<!-- 
+	<bean id="sqlSessionFactoryMssql" class="org.mybatis.spring.SqlSessionFactoryBean">
+	  <property name="dataSource" ref="dataSourceMssql" />
+	  <property name="mapperLocations" value="classpath:/sqlmaps/mssql/*.xml" />
+	</bean>
+	<bean id="sqlSessionFactoryOracle" class="org.mybatis.spring.SqlSessionFactoryBean">
+	  <property name="dataSource" ref="dataSourceOracle" />
+	  <property name="mapperLocations" value="classpath:/sqlmaps/oracle/*.xml" />
+	</bean>
+	
+	<bean id="sqlSessionMssql" class="org.mybatis.spring.SqlSessionTemplate">
+	  <constructor-arg index="0" ref="sqlSessionFactoryMssql" />
+	</bean>
+	<bean id="sqlSessionOracle" class="org.mybatis.spring.SqlSessionTemplate">
+	  <constructor-arg index="0" ref="sqlSessionFactoryOracle" />
+	</bean>
+	
+	<mybatis-spring:scan base-package="com.test.atomikos.dao.mapper.mssql" factory-ref="sqlSessionFactoryMssql"/>
+	<mybatis-spring:scan base-package="com.test.atomikos.dao.mapper.oracle" factory-ref="sqlSessionFactoryOracle"/>
+ -->	
+</beans>

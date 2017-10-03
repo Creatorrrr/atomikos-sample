@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- https://www.atomikos.com/Documentation/SpringIntegration 참고 -->
+	
+	<!-- 웹 어플리케이션에서 생성할 경우 데이터소스 설정 (이 경우 pom.xml에 atomikos-jdbc 추가) -->
+<!-- 
+	<util:properties id="mssql" location="WEB-INF/classes/props/mssql/dataSource.properties"/>
+	<util:properties id="oracle" location="WEB-INF/classes/props/oracle/dataSource.properties"/>
+
+	<bean id="dataSourceMssqlXA" class="com.microsoft.sqlserver.jdbc.SQLServerXADataSource">
+		<property name="URL" value="#{mssql[url]}"/>
+		<property name="user" value="#{mssql[username]}" />
+		<property name="password" value="#{mssql[password]}"/>
+	</bean>
+	<bean id="dataSourceOracleXA" class="oracle.jdbc.xa.client.OracleXADataSource">
+		<property name="URL" value="#{oracle[url]}"/>
+		<property name="user" value="#{oracle[username]}" />
+		<property name="password" value="#{oracle[password]}"/>
+	</bean>
+	
+	<bean id="dataSourceMssql" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		    init-method="init" destroy-method="close">
+	    <property name="uniqueResourceName" value="mssqlXAds"/>
+	    <property name="xaDataSource" ref="dataSourceMssqlXA"></property>
+	    <property name="poolSize" value="3"/>
+	</bean>
+	
+	<bean id="dataSourceOracle" class="com.atomikos.jdbc.AtomikosDataSourceBean"
+		    init-method="init" destroy-method="close">
+	    <property name="uniqueResourceName" value="oracleXAds"/>
+	    <property name="xaDataSource" ref="dataSourceOracleXA"></property>
+	    <property name="poolSize" value="3"/>
+	</bean>
+ -->
+
+	<!-- WAS에서 생성할 경우 데이터 소스 설정 (JNDI, 이 경우 pom.xml에서 atomikos-jdbc 제거) -->
+	<!-- *********************************** 주의사항(Caution) *********************************** -->
+	<!-- 톰캣에서 JNDI 사용 시 @Transactional을 설정하고 정상적으로 트랜잭션 매니저가 작동하더라도 실제 분산 트랜잭션이 적용되지 않음 -->
+	<!-- 설정이 뭔가 잘못된 게 있던지 Atomikos가 이상하던지 둘 중 하나일 것이나 3일 매달려서 안됐으면 그냥 안되는 걸로 보면 되겠지...... -->
+	<!-- ************************************************************************************** -->
+	<jee:jndi-lookup id="dataSourceOracle" jndi-name="java:comp/env/jdbc/oracle/dataSource" resource-ref="true"/>
+	<jee:jndi-lookup id="dataSourceMssql" jndi-name="java:comp/env/jdbc/mssql/dataSource" resource-ref="true"/>
+
+	<!-- 위와 동일 (JNDI) -->
+<!--  
+	<bean id="dataSourceOracle" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="java:comp/env/jdbc/oracle/dataSource" />
+    </bean>
+    <bean id="dataSourceMssql" class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="java:comp/env/jdbc/mssql/dataSource" />
+    </bean>
+ -->
+
+	<!-- MyBatis 세션 팩토리/세션 Bean 등록, Mapper 등록 및 Mapper별 팩토리 등록  -->
+	<bean id="sqlSessionFactoryMssql" class="org.mybatis.spring.SqlSessionFactoryBean">
+	  <property name="dataSource" ref="dataSourceMssql" />
+	  <property name="mapperLocations" value="classpath:/sqlmaps/mssql/*.xml" />
+	</bean>
+	<bean id="sqlSessionFactoryOracle" class="org.mybatis.spring.SqlSessionFactoryBean">
+	  <property name="dataSource" ref="dataSourceOracle" />
+	  <property name="mapperLocations" value="classpath:/sqlmaps/oracle/*.xml" />
+	</bean>
+	
+	<bean id="sqlSessionMssql" class="org.mybatis.spring.SqlSessionTemplate">
+	  <constructor-arg index="0" ref="sqlSessionFactoryMssql" />
+	</bean>
+	<bean id="sqlSessionOracle" class="org.mybatis.spring.SqlSessionTemplate">
+	  <constructor-arg index="0" ref="sqlSessionFactoryOracle" />
+	</bean>
+	
+	<mybatis-spring:scan base-package="com.test.atomikos.dao.mapper.mssql" factory-ref="sqlSessionFactoryMssql"/>
+	<mybatis-spring:scan base-package="com.test.atomikos.dao.mapper.oracle" factory-ref="sqlSessionFactoryOracle"/>
+
+	<!-- 웹 어플리케이션에서 생성할 경우 트랜잭션 매니저 설정 -->
+<!-- 
+	<bean id="userTransactionService"  
+		  class="com.atomikos.icatch.config.UserTransactionServiceImp"  
+		  init-method="init" destroy-method="shutdownForce"> 
+	    <constructor-arg> 
+	        <props> 
+	            <prop key="com.atomikos.icatch.service"> 
+	              com.atomikos.icatch.standalone.UserTransactionServiceFactory 
+	            </prop> 
+	        </props> 
+	    </constructor-arg> 
+	</bean>
+	
+	<bean id="atomikosTransactionManager"  
+	      class="com.atomikos.icatch.jta.UserTransactionManager"  
+	      init-method="init" destroy-method="close"
+	      depends-on="userTransactionService">
+ 	   <property name="startupTransactionService" value="false"/>
+	   <property name="forceShutdown" value="false" /> 
+	</bean>
+	
+	<bean id="atomikosUserTransaction"  
+	      class="com.atomikos.icatch.jta.UserTransactionImp"
+	    depends-on="userTransactionService">
+	   <property name="transactionTimeout" value="300" /> 
+	</bean>
+	
+	<bean id="jtaTransactionManager"  
+	      class="org.springframework.transaction.jta.JtaTransactionManager"
+	      depends-on="userTransactionService">
+	   <property name="transactionManager" ref="atomikosTransactionManager" /> 
+	   <property name="userTransaction" ref="atomikosUserTransaction" />
+	</bean>
+ -->
+ 
+ 	<!-- WAS에서 생성할 경우 트랜잭션 매니저 설정 (JNDI를 따로 선언한 후 넘길 경우, 아래와 동일)  -->
+ 	
+	<jee:jndi-lookup id="TransactionManager" jndi-name="java:comp/env/TransactionManager" resource-ref="true"/>
+	<jee:jndi-lookup id="UserTransaction" jndi-name="java:comp/UserTransaction" resource-ref="true"/>
+
+	<bean id="jtaTransactionManager"  
+	      class="org.springframework.transaction.jta.JtaTransactionManager">
+	   <property name="transactionManager" ref="TransactionManager" /> 
+	   <property name="userTransaction" ref="UserTransaction" />
+	</bean>
+
+
+	<!-- WAS에서 생성할 경우 트랜잭션 매니저 설정 (JNDI를 바로 넘길 경우, 위와 동일) -->
+<!-- 
+	<bean id="jtaTransactionManager"  
+	      class="org.springframework.transaction.jta.JtaTransactionManager">
+	   <property name="transactionManagerName" value="java:comp/env/TransactionManager" /> 
+	   <property name="userTransactionName" value="java:comp/UserTransaction" />
+	</bean>
+ -->
+</beans>

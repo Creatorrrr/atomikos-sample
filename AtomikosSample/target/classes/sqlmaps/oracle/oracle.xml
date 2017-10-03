@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="com.test.atomikos.dao.mapper.oracle.OracleMapper">
+  	
+  	<select id="selectTest" resultType="int">
+  		SELECT COUNT(*)
+  		FROM TEST
+  	</select>
+  	
+  	<insert id="insertTest">
+  		INSERT INTO TEST(t1, t2)
+  		VALUES(#{t1}, #{t2})
+  	</insert>
+  
+  	<update id="updateTest">
+  		UPDATE TEST
+  		SET t1=#{t1}, t2=#{t2}
+  	</update>
+  
+  </mapper>
